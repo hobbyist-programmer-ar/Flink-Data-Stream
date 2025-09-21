@@ -31,21 +31,22 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.BsonDocument;
 import org.hobbiesofar.deserializer.JSONValueDeserializationSchema;
+import org.hobbiesofar.dto.Order;
 import org.hobbiesofar.dto.Transaction;
+import org.hobbiesofar.mapper.OrderMapper;
 
 import static org.hobbiesofar.sink.MongoSinkConfig.generateMongSink;
 import static org.hobbiesofar.source.KafkaSourceConfig.getKafkaSourceConfig;
 
 public class DataStreamJob {
 	public static void main(String[] args) throws Exception {
-		// Sets up the execution environment, which is the main entry point
-		// to building Flink applications.
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-		String topic = "financial-txn";
 		KafkaSource<Transaction> source = getKafkaSourceConfig();
 		DataStream<Transaction> transactionDataStream = env
 				.fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source");
 		transactionDataStream.print();
+		DataStream<Order> orderDataStream = transactionDataStream.map(new OrderMapper());
+		orderDataStream.print();
 		MongoSink<Transaction> sink = generateMongSink();
 		transactionDataStream.sinkTo(sink);
 		env.execute("Flink Java API Skeleton");
