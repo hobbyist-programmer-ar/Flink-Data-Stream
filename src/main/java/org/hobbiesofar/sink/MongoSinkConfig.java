@@ -17,7 +17,7 @@ public class MongoSinkConfig {
                 .setBatchSize(1000)
                 .setBatchIntervalMs(1000)
                 .setMaxRetries(3)
-                .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
                 .setSerializationSchema(
                         (txn, context) ->{
                             ObjectMapper objectMapper = new ObjectMapper();
