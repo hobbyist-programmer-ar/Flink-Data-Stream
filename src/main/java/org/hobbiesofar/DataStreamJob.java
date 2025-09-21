@@ -33,42 +33,20 @@ import org.bson.BsonDocument;
 import org.hobbiesofar.deserializer.JSONValueDeserializationSchema;
 import org.hobbiesofar.dto.Transaction;
 
+import static org.hobbiesofar.sink.MongoSinkConfig.generateMongSink;
+import static org.hobbiesofar.source.KafkaSourceConfig.getKafkaSourceConfig;
+
 public class DataStreamJob {
 	public static void main(String[] args) throws Exception {
 		// Sets up the execution environment, which is the main entry point
 		// to building Flink applications.
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		String topic = "financial-txn";
-		KafkaSource<Transaction> source = KafkaSource.<Transaction>builder()
-				.setBootstrapServers("localhost:9092")
-				.setTopics(topic)
-				.setGroupId("financial-transaction-cg")
-				.setStartingOffsets(OffsetsInitializer.earliest())
-				.setValueOnlyDeserializer(new JSONValueDeserializationSchema())
-				.build();
+		KafkaSource<Transaction> source = getKafkaSourceConfig();
 		DataStream<Transaction> transactionDataStream = env
 				.fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source");
 		transactionDataStream.print();
-		MongoSink<Transaction> sink = MongoSink.<Transaction>builder()
-				.setUri("DBSTRING")
-				.setDatabase("MyTransactions")
-				.setCollection("FinancialTransactions")
-				.setBatchSize(1000)
-				.setBatchIntervalMs(1000)
-				.setMaxRetries(3)
-				.setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
-				.setSerializationSchema(
-						(txn, context) ->{
-							ObjectMapper objectMapper = new ObjectMapper();
-                            String json = null;
-                            try {
-                                json = objectMapper.writeValueAsString(txn);
-                            } catch (JsonProcessingException e) {
-                                throw new RuntimeException(e);
-                            }
-                            return new InsertOneModel<>(BsonDocument.parse(json));
-						})
-				.build();
+		MongoSink<Transaction> sink = generateMongSink();
 		transactionDataStream.sinkTo(sink);
 		env.execute("Flink Java API Skeleton");
 	}
