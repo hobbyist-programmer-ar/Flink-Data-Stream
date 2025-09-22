@@ -7,7 +7,7 @@ import org.hobbiesofar.dto.Transaction;
 
 import java.io.IOException;
 
-public class JSONValueDeserializationSchema implements DeserializationSchema<Transaction> {
+public class TransactionMessageDeserializationSchema implements DeserializationSchema<Transaction> {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Override
